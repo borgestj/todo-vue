@@ -1,28 +1,47 @@
 <template>
 	<div id="app">
 		<h1>Tarefas</h1>
+		<TaskProgress :progress="progress" />
 		<NewTask @taskAdded="addTask" />
-		<TaskGrid :tasks="tasks" />
+		<TaskGrid @taskDeleted="deleteTask" @taskStateChanged="toggleTaskState" :tasks="tasks" />
 	</div>
 </template>
 
 <script>
+import TaskProgress from './components/TaskProgress.vue'
 import TaskGrid from './components/TaskGrid.vue'
 import NewTask from './components/NewTask'
+
 export default {
 	components: {
+		TaskProgress,
 		TaskGrid,
 		NewTask
 	},
 
 	data() {
 		return {
-			tasks: [
-				{name: 'Lavar louça', pending: false},
-				{name: 'Comprar blusa', pending: true}
-			]
+			tasks: []
 		}
 	},
+
+	computed: {
+		progress() {
+			const total = this.tasks.length
+			const done = this.tasks.filter(t => !t.pending).length
+			return Math.round(done / total * 100) || 0
+		}
+	},
+
+	watch: {
+		tasks: {
+			deep: true,
+			handler() {
+				localStorage.setItem('tasks', JSON.stringify(this.tasks))
+			}
+		}	
+	},
+
 	methods: {
 		addTask(task) {
 			const sameName = t => t.name === task.name
@@ -33,7 +52,20 @@ export default {
 					pending: task.pending || true
 				})
 			}
+		},
+
+		deleteTask(indice) {
+			this.tasks.splice(indice, 1)
+		},
+
+		toggleTaskState(indice) {
+			this.tasks[indice].pending = !this.tasks[indice].pending
 		}
+	},
+
+	created() {
+		const json = localStorage.getItem('tasks')
+		this.tasks = JSON.parse(json) || []
 	}
 }
 </script>
